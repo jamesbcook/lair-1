@@ -13,6 +13,8 @@ services:
       - "traefik.port=11014"
       - "traefik.backend=lair"
       - "traefik.frontend.rule=Host:lair.localhost,0.tcp.ngrok.io"
+    expose:
+      - 11014
 
   lairapi:
     hostname: lairapi
@@ -27,6 +29,8 @@ services:
     volumes:
       - $PWD/plugins:/plugins
       - $HOME/.lair/files:/files
+    expose:
+      - 11015
 
   lairdb:
     hostname: lairdb
@@ -38,13 +42,14 @@ services:
     entrypoint: /usr/bin/mongod --bind_ip_all --dbpath=/data/db --replSet rs0 --logpath /var/log/mongodb.log --logappend
     volumes:
       - $HOME/.lair/mongodb/data/db:/data/db
-      #- $HOME/.lair/mongodb/var/log:/var/log
-      #- $HOME/.lair/mongodb/backup:/backup
+      - $HOME/.lair/mongodb/backup:/backup
+    expose:
+      - 27017
+
   traefik:
       hostname: traefik
       container_name: traefik
       image: traefik:1.5
-      # command: --logLevel=DEBUG
       ports:
         - "80:80"
         - "443:443"
@@ -52,30 +57,22 @@ services:
       volumes:
         - /var/run/docker.sock:/var/run/docker.sock
         - $PWD/traefik.toml:/etc/traefik/traefik.toml
-      networks:
-        - default
-      cap_drop:
-        - all
-      cap_add:
-        - net_bind_service
       labels:
         - "traefik.enable=true"
         - "traefik.port=8080"
         - "traefik.backend=traefik"
         - "traefik.frontend.rule=Host:traefik.localhost"
 
-#   ngrok:
-#       hostname: ngrok
-#       container_name: lair_ngrok
-#       image: wernight/ngrok
-#       restart: always
-#       labels:
-#         - "traefik.enable=true"
-#         - "traefik.port=4040"
-#         - "traefik.backend=ngrok"
-#         - "traefik.frontend.rule=Host:ngrok.localhost"
-#       entrypoint: ngrok tcp traefik:443 --authtoken YOUR_AUTH_TOKEN
-#       links:
-#         - traefik
-#       networks:
-#         - default
+  # ngrok:
+  #     hostname: ngrok
+  #     container_name: lair_ngrok
+  #     image: wernight/ngrok
+  #     restart: always
+  #     labels:
+  #       - "traefik.enable=true"
+  #       - "traefik.port=4040"
+  #       - "traefik.backend=ngrok"
+  #       - "traefik.frontend.rule=Host:ngrok.localhost"
+  #     entrypoint: ngrok tcp traefik:443 --authtoken YOUR_AUTH_TOKEN
+  #     expose:
+  #       - 4040
